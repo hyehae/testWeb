@@ -1,2 +1,2 @@
 sudo rm -rf /var/www/html/index.html
-sudo systemctl restart apache2
+sudo systemctl restart httpd
