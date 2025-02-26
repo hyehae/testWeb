@@ -1,0 +1,34 @@
+name: github-action-testWeb
+
+on:
+  push:
+    branches: [main]
+
+jobs: 
+  build: 
+    runs-on: ubuntu-20.04
+    steps:
+      - name: Git Clone
+        uses: actions/checkout@v2
+
+      - name: Create Deployment Package
+        run: zip -qq -r $GITHUB_SHA.zip .
+        shell: bash
+
+      - name: Configure AWS Credentials
+        uses: aws-actions/configure-aws-credentials@v1
+        with:
+          aws-access-key-id: ${{ secrets.ACCESS_KEY }}
+          aws-secret-access-key: ${{ secrets.SECRET_ACCESS_KEY }}
+          aws-region: ap-northeast-2
+
+      - name: Upload to S3
+        run: aws s3 cp --region ap-northeast-2 ./$GITHUB_SHA.zip s3://codedeploy-testweb-hannah-bucket/$GITHUB_SHA.zip
+
+      - name: Deploy with AWS CodeDeploy
+        run: |
+          aws deploy create-deployment \
+            --application-name codedeploy-testweb-hannah \
+            --deployment-config-name CodeDeployDefault.OneAtATime \
+            --deployment-group-name codedeploy-testweb-hannah-group \
+            --s3-location bucket=codedeploy-testweb-hannah-bucket,bundleType=zip,key=$GITHUB_SHA.zip
